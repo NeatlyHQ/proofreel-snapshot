@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ProofReel Snapshot — Free Proof Card Generator</title>
+<style>
+  :root {
+    --grad-a: #667eea;
+    --grad-b: #764ba2;
+    --bg: #0b0b14;
+    --panel: #14141f;
+    --panel-border: #26263a;
+    --text: #f1f1f6;
+    --text-dim: rgba(241,241,246,0.6);
+    --text-faint: rgba(241,241,246,0.4);
+    --green: #34d399;
+    --red: #f87171;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+  header.site {
+    padding: 28px 24px 8px;
+    text-align: center;
+  }
+  header.site h1 {
+    margin: 0 0 8px;
+    font-size: 28px;
+    font-weight: 800;
+  }
+  header.site p {
+    margin: 0;
+    color: var(--text-dim);
+    font-size: 15px;
+  }
+  #self-access-link {
+    display: inline-block;
+    margin-top: 14px;
+    padding: 10px 20px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, var(--grad-a), var(--grad-b));
+    color: #fff;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 14px;
+  }
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 24px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
+    align-items: start;
+  }
+  @media (max-width: 860px) {
+    main { grid-template-columns: 1fr; }
+  }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 16px;
+    padding: 24px;
+  }
+  .panel h2 {
+    margin: 0 0 18px;
+    font-size: 16px;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+  label {
+    display: block;
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+    margin-top: 16px;
+  }
+  label:first-of-type { margin-top: 0; }
+  input[type="text"], input[type="number"] {
+    width: 100%;
+    padding: 11px 12px;
+    background: #0e0e18;
+    border: 1px solid var(--panel-border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: inherit;
+  }
+  input:focus { outline: 2px solid var(--grad-a); }
+  .toggle-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 6px;
+  }
+  .toggle-btn {
+    flex: 1;
+    padding: 9px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--panel-border);
+    background: #0e0e18;
+    color: var(--text-dim);
+    font-size: 13px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .toggle-btn.active {
+    background: linear-gradient(135deg, var(--grad-a), var(--grad-b));
+    color: #fff;
+    border-color: transparent;
+  }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  #exportBtn {
+    margin-top: 22px;
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--grad-a), var(--grad-b));
+    color: #fff;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  #exportBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .card-wrap {
+    display: flex;
+    justify-content: center;
+  }
+  #card {
+    width: 100%;
+    max-width: 420px;
+    aspect-ratio: 1 / 1;
+    border-radius: 20px;
+    background: linear-gradient(160deg, #1a1a2e, #101018);
+    border: 1px solid var(--panel-border);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+    text-align: center;
+    overflow: hidden;
+  }
+  #card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 30% 20%, rgba(102,126,234,0.25), transparent 55%),
+                radial-gradient(circle at 80% 85%, rgba(118,75,162,0.25), transparent 55%);
+    pointer-events: none;
+  }
+  .empty-state {
+    color: var(--text-faint);
+    font-size: 14px;
+    position: relative;
+    z-index: 1;
+  }
+  .card-content { position: relative; z-index: 1; display: none; width: 100%; }
+  .card-content.visible { display: block; }
+  .card-metric-name {
+    font-size: 15px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+  }
+  .card-client {
+    font-size: 13px;
+    color: var(--text-faint);
+    margin-bottom: 22px;
+  }
+  .card-numbers {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+  .card-before {
+    font-size: 26px;
+    color: var(--text-faint);
+    font-weight: 600;
+  }
+  .card-arrow { font-size: 20px; color: var(--text-faint); }
+  .card-after {
+    font-size: 42px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #fff, #dcdcff);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .card-delta {
+    display: inline-block;
+    padding: 6px 16px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 15px;
+    margin-bottom: 18px;
+  }
+  .card-delta.positive { background: rgba(52,211,153,0.15); color: var(--green); }
+  .card-delta.negative { background: rgba(248,113,113,0.15); color: var(--red); }
+  .card-delta.neutral { background: rgba(255,255,255,0.08); color: var(--text-dim); }
+  .card-meta {
+    font-size: 12px;
+    color: var(--text-faint);
+    line-height: 1.6;
+  }
+  .card-watermark {
+    position: absolute;
+    bottom: 14px;
+    right: 18px;
+    font-size: 11px;
+    color: var(--text-faint);
+    z-index: 1;
+  }
+  .completeness {
+    margin-top: 18px;
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+  .completeness div {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+  }
+  .completeness .icon { width: 16px; text-align: center; }
+  .completeness .done .icon { color: var(--green); }
+  .completeness .pending .icon { color: var(--text-faint); }
+  .upsell {
+    max-width: 1100px;
+    margin: 8px auto 40px;
+    padding: 0 24px;
+    text-align: center;
+  }
+  .upsell-box {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 16px;
+    padding: 22px;
+  }
+  .upsell-box p { margin: 0 0 14px; color: var(--text-dim); font-size: 14px; }
+  .upsell-box a {
+    display: inline-block;
+    padding: 12px 24px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, var(--grad-a), var(--grad-b));
+    color: #fff;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 14px;
+  }
+  footer.legal {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 24px;
+    color: var(--text-faint);
+    font-size: 11px;
+    line-height: 1.6;
+    border-top: 1px solid var(--panel-border);
+  }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <h1>ProofReel Snapshot</h1>
+  <p>Turn one real before/after result into a polished proof card — free, in your browser, no upload, no account.</p>
+  <!-- JVZOO_SELF_LINK_PLACEHOLDER -->
+  <a href="#" id="self-access-link">Get free instant access →</a>
+</header>
+
+<main>
+  <section class="panel" aria-label="Enter your metric">
+    <h2>Your Result</h2>
+
+    <label for="metricName">Metric name</label>
+    <input type="text" id="metricName" placeholder="e.g. Monthly Revenue">
+
+    <label for="clientLabel">Client / project (optional)</label>
+    <input type="text" id="clientLabel" placeholder="e.g. Acme Coaching">
+
+    <div class="row2">
+      <div>
+        <label for="beforeValue">Before</label>
+        <input type="text" id="beforeValue" placeholder="e.g. $10,000">
+      </div>
+      <div>
+        <label for="afterValue">After</label>
+        <input type="text" id="afterValue" placeholder="e.g. $15,000">
+      </div>
+    </div>
+
+    <label>Direction of improvement</label>
+    <div class="toggle-row">
+      <button type="button" class="toggle-btn active" id="toggleHigher">Higher is better</button>
+      <button type="button" class="toggle-btn" id="toggleLower">Lower is better</button>
+    </div>
+
+    <label for="timeframe">Timeframe (optional)</label>
+    <input type="text" id="timeframe" placeholder="e.g. Jan–Mar 2026">
+
+    <label for="source">Source (optional)</label>
+    <input type="text" id="source" placeholder="e.g. Client's Google Analytics">
+
+    <button id="exportBtn" disabled>Export PNG</button>
+  </section>
+
+  <section class="card-wrap" aria-label="Proof card preview">
+    <div id="card">
+      <div class="empty-state" id="emptyState">Enter values to see your card</div>
+      <div class="card-content" id="cardContent">
+        <div class="card-metric-name" id="cardMetricName"></div>
+        <div class="card-client" id="cardClient"></div>
+        <div class="card-numbers">
+          <span class="card-before" id="cardBefore"></span>
+          <span class="card-arrow">→</span>
+          <span class="card-after" id="cardAfter"></span>
+        </div>
+        <div class="card-delta" id="cardDelta"></div>
+        <div class="card-meta">
+          <div id="metaTimeframe"></div>
+          <div id="metaSource"></div>
+        </div>
+      </div>
+      <div class="card-watermark">Made with ProofReel Snapshot</div>
+    </div>
+  </section>
+</main>
+
+<div class="upsell" style="max-width:1100px;margin:0 auto 8px;padding:0 24px;">
+  <div class="completeness panel" id="completenessBox" style="display:none;">
+    <div id="checkClient" class="pending"><span class="icon">○</span> Client or project named</div>
+    <div id="checkTimeframe" class="pending"><span class="icon">○</span> Timeframe included</div>
+    <div id="checkSource" class="pending"><span class="icon">○</span> Source included</div>
+  </div>
+</div>
+
+<div class="upsell">
+  <div class="upsell-box">
+    <p>Need this as an animated video, with multiple metrics, CSV import for many clients, or your own brand instead of ours? That's ProofReel Studio.</p>
+    <!-- JVZOO_UPSELL_LINK_PLACEHOLDER -->
+    <a href="#" target="_blank">Explore ProofReel Studio →</a>
+  </div>
+</div>
+
+<footer class="legal">
+  <!-- JVZOO_LEGAL_DISCLAIMER_PLACEHOLDER -->
+</footer>
+
+<!-- JVZOO_PIXELS_PLACEHOLDER -->
+
+<script>
+(function () {
+  "use strict";
+
+  var state = {
+    metricName: "",
+    clientLabel: "",
+    beforeRaw: "",
+    afterRaw: "",
+    beforeNum: null,
+    afterNum: null,
+    isPercent: false,
+    higherIsBetter: true,
+    timeframe: "",
+    source: ""
+  };
+
+  var displayed = { before: 0, after: 0 };
+  var animFrame = null;
+
+  var el = {
+    metricName: document.getElementById("metricName"),
+    clientLabel: document.getElementById("clientLabel"),
+    beforeValue: document.getElementById("beforeValue"),
+    afterValue: document.getElementById("afterValue"),
+    timeframe: document.getElementById("timeframe"),
+    source: document.getElementById("source"),
+    toggleHigher: document.getElementById("toggleHigher"),
+    toggleLower: document.getElementById("toggleLower"),
+    exportBtn: document.getElementById("exportBtn"),
+    emptyState: document.getElementById("emptyState"),
+    cardContent: document.getElementById("cardContent"),
+    cardMetricName: document.getElementById("cardMetricName"),
+    cardClient: document.getElementById("cardClient"),
+    cardBefore: document.getElementById("cardBefore"),
+    cardAfter: document.getElementById("cardAfter"),
+    cardDelta: document.getElementById("cardDelta"),
+    metaTimeframe: document.getElementById("metaTimeframe"),
+    metaSource: document.getElementById("metaSource"),
+    completenessBox: document.getElementById("completenessBox"),
+    checkClient: document.getElementById("checkClient"),
+    checkTimeframe: document.getElementById("checkTimeframe"),
+    checkSource: document.getElementById("checkSource")
+  };
+
+  function parseNumber(raw) {
+    if (typeof raw !== "string") return { ok: false };
+    var s = raw.trim();
+    if (s.length === 0) return { ok: false };
+    var isPercent = /%\s*$/.test(s);
+    s = s.replace(/%/g, "");
+    s = s.replace(/[$€£¥]/g, "");
+    s = s.replace(/\s+/g, "");
+    if (s.indexOf(".") === -1 && /,/.test(s)) {
+      var parts = s.split(",");
+      if (parts.length === 2 && parts[1].length >= 1 && parts[1].length <= 2 && /^\d+$/.test(parts[1])) {
+        s = parts[0] + "." + parts[1];
+      } else {
+        s = s.replace(/,/g, "");
+      }
+    } else {
+      s = s.replace(/,/g, "");
+    }
+    if (s.length === 0) return { ok: false };
+    if (!/^-?\d+(\.\d+)?$/.test(s)) return { ok: false };
+    var n = parseFloat(s);
+    if (!isFinite(n)) return { ok: false };
+    return { ok: true, value: n, isPercent: isPercent };
+  }
+
+  function formatNumber(n, isPercent) {
+    if (n === null || n === undefined || !isFinite(n)) return "—";
+    var rounded = Math.round(n * 100) / 100;
+    var isInt = Math.abs(rounded - Math.round(rounded)) < 0.005;
+    var formatted = isInt
+      ? Math.round(rounded).toLocaleString("en-US")
+      : rounded.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return isPercent ? formatted + "%" : formatted;
+  }
+
+  function readInputs() {
+    state.metricName = el.metricName.value.trim();
+    state.clientLabel = el.clientLabel.value.trim();
+    state.timeframe = el.timeframe.value.trim();
+    state.source = el.source.value.trim();
+
+    var b = parseNumber(el.beforeValue.value);
+    var a = parseNumber(el.afterValue.value);
+
+    state.beforeNum = b.ok ? b.value : null;
+    state.afterNum = a.ok ? a.value : null;
+    state.beforeIsPercent = b.ok ? b.isPercent : false;
+    state.afterIsPercent = a.ok ? a.isPercent : false;
+    if (b.ok && a.ok && b.isPercent !== a.isPercent) {
+      state.mixedPercent = true;
+      state.isPercent = false;
+    } else {
+      state.mixedPercent = false;
+      state.isPercent = (b.ok && b.isPercent) || (a.ok && a.isPercent);
+    }
+  }
+
+  function hasValidData() {
+    return state.metricName.length > 0 && state.beforeNum !== null && state.afterNum !== null;
+  }
+
+  function computeDelta() {
+    var before = state.beforeNum;
+    var after = state.afterNum;
+    var delta = after - before;
+
+    var result = {
+      delta: delta,
+      percent: null,
+      percentLabel: "",
+      direction: "neutral"
+    };
+
+    if (before === after) {
+      result.direction = "neutral";
+      result.percentLabel = "No change";
+      return result;
+    }
+
+    if (before === 0) {
+      result.percentLabel = "N/A (base 0)";
+      if (delta > 0) {
+        result.direction = state.higherIsBetter ? "positive" : "negative";
+      } else {
+        result.direction = state.higherIsBetter ? "negative" : "positive";
+      }
+      return result;
+    } else if (before < 0) {
+      var suffix = state.isPercent ? " pts" : "";
+      result.percentLabel = (delta > 0 ? "+" : "−") + formatNumber(Math.abs(delta), false) + suffix;
+      var improvedNeg = state.higherIsBetter ? delta > 0 : delta < 0;
+      result.direction = improvedNeg ? "positive" : "negative";
+      return result;
+    } else if (state.mixedPercent) {
+      result.percentLabel = (delta > 0 ? "+" : "−") + formatNumber(Math.abs(delta), false);
+      var improvedMix = state.higherIsBetter ? delta > 0 : delta < 0;
+      result.direction = improvedMix ? "positive" : "negative";
+      return result;
+    } else {
+      var pct = (delta / Math.abs(before)) * 100;
+      result.percent = pct;
+      if (Math.abs(pct) > 10000) {
+        var factor = after / before;
+        result.percentLabel = (factor < 0 ? "−×" : "×") + formatNumber(Math.round(Math.abs(factor)), false);
+      } else {
+        var sign = pct > 0 ? "+" : "";
+        result.percentLabel = sign + formatNumber(pct, true);
+      }
+    }
+
+    var improved = state.higherIsBetter ? delta > 0 : delta < 0;
+    result.direction = improved ? "positive" : "negative";
+
+    return result;
+  }
+
+  function animateTo() {
+    var startBefore = displayed.before;
+    var startAfter = displayed.after;
+    var targetBefore = state.beforeNum;
+    var targetAfter = state.afterNum;
+    var duration = 800;
+    var startTime = null;
+
+    if (animFrame) cancelAnimationFrame(animFrame);
+
+    function easeOutExpo(t) {
+      return t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
+    }
+
+    function step(ts) {
+      if (startTime === null) startTime = ts;
+      var elapsed = ts - startTime;
+      var t = Math.min(elapsed / duration, 1);
+      var eased = easeOutExpo(t);
+
+      displayed.before = startBefore + (targetBefore - startBefore) * eased;
+      displayed.after = startAfter + (targetAfter - startAfter) * eased;
+
+      renderNumbers();
+
+      if (t < 1) {
+        animFrame = requestAnimationFrame(step);
+      } else {
+        displayed.before = targetBefore;
+        displayed.after = targetAfter;
+        animFrame = null;
+        renderNumbers();
+      }
+    }
+    animFrame = requestAnimationFrame(step);
+  }
+
+  function renderNumbers() {
+    el.cardBefore.textContent = formatNumber(displayed.before, state.beforeIsPercent || false);
+    el.cardAfter.textContent = formatNumber(displayed.after, state.afterIsPercent || false);
+  }
+
+  function renderCompleteness() {
+    function setCheck(node, done) {
+      node.className = done ? "done" : "pending";
+      node.querySelector(".icon").textContent = done ? "✓" : "○";
+    }
+    setCheck(el.checkClient, state.clientLabel.length > 0);
+    setCheck(el.checkTimeframe, state.timeframe.length > 0);
+    setCheck(el.checkSource, state.source.length > 0);
+  }
+
+  function render() {
+    if (!hasValidData()) {
+      if (animFrame) {
+        cancelAnimationFrame(animFrame);
+        animFrame = null;
+      }
+      el.emptyState.style.display = "block";
+      el.cardContent.classList.remove("visible");
+      el.completenessBox.style.display = "none";
+      el.exportBtn.disabled = true;
+      return;
+    }
+
+    el.emptyState.style.display = "none";
+    el.cardContent.classList.add("visible");
+    el.completenessBox.style.display = "block";
+    el.exportBtn.disabled = false;
+
+    el.cardMetricName.textContent = state.metricName;
+
+    if (state.clientLabel) {
+      el.cardClient.textContent = state.clientLabel;
+      el.cardClient.style.display = "block";
+    } else {
+      el.cardClient.style.display = "none";
+    }
+
+    var d = computeDelta();
+    el.cardDelta.textContent = d.percentLabel;
+    el.cardDelta.className = "card-delta " + d.direction;
+
+    el.metaTimeframe.textContent = state.timeframe ? state.timeframe : "";
+    el.metaSource.textContent = state.source ? state.source : "";
+
+    renderCompleteness();
+    animateTo();
+  }
+
+  function onInputChange() {
+    readInputs();
+    render();
+  }
+
+  [el.metricName, el.clientLabel, el.beforeValue, el.afterValue, el.timeframe, el.source].forEach(function (input) {
+    input.addEventListener("input", onInputChange);
+  });
+
+  el.toggleHigher.addEventListener("click", function () {
+    state.higherIsBetter = true;
+    el.toggleHigher.classList.add("active");
+    el.toggleLower.classList.remove("active");
+    render();
+  });
+  el.toggleLower.addEventListener("click", function () {
+    state.higherIsBetter = false;
+    el.toggleLower.classList.add("active");
+    el.toggleHigher.classList.remove("active");
+    render();
+  });
+
+  function drawRoundedRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function exportPNG() {
+    if (!hasValidData()) return;
+
+    var size = 1080;
+    var canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    var ctx = canvas.getContext("2d");
+
+    var bgGrad = ctx.createLinearGradient(0, 0, size, size);
+    bgGrad.addColorStop(0, "#1a1a2e");
+    bgGrad.addColorStop(1, "#101018");
+    ctx.fillStyle = bgGrad;
+    drawRoundedRect(ctx, 0, 0, size, size, 32);
+    ctx.fill();
+
+    var glow1 = ctx.createRadialGradient(size * 0.3, size * 0.2, 0, size * 0.3, size * 0.2, size * 0.5);
+    glow1.addColorStop(0, "rgba(102,126,234,0.28)");
+    glow1.addColorStop(1, "rgba(102,126,234,0)");
+    ctx.fillStyle = glow1;
+    ctx.fillRect(0, 0, size, size);
+
+    var glow2 = ctx.createRadialGradient(size * 0.8, size * 0.85, 0, size * 0.8, size * 0.85, size * 0.5);
+    glow2.addColorStop(0, "rgba(118,75,162,0.28)");
+    glow2.addColorStop(1, "rgba(118,75,162,0)");
+    ctx.fillStyle = glow2;
+    ctx.fillRect(0, 0, size, size);
+
+    ctx.textAlign = "center";
+
+    ctx.font = "600 30px -apple-system, sans-serif";
+    ctx.fillStyle = "rgba(241,241,246,0.6)";
+    ctx.fillText(state.metricName.toUpperCase(), size / 2, 330);
+
+    if (state.clientLabel) {
+      ctx.font = "400 26px -apple-system, sans-serif";
+      ctx.fillStyle = "rgba(241,241,246,0.4)";
+      ctx.fillText(state.clientLabel, size / 2, 372);
+    }
+
+    var beforeStr = formatNumber(state.beforeNum, state.beforeIsPercent || false);
+    var afterStr = formatNumber(state.afterNum, state.afterIsPercent || false);
+
+    ctx.font = "600 46px -apple-system, sans-serif";
+    ctx.fillStyle = "rgba(241,241,246,0.4)";
+    var beforeWidth = ctx.measureText(beforeStr).width;
+
+    ctx.font = "800 78px -apple-system, sans-serif";
+    var afterWidth = ctx.measureText(afterStr).width;
+
+    var arrowWidth = 60;
+    var totalWidth = beforeWidth + arrowWidth + afterWidth + 40;
+    var startX = size / 2 - totalWidth / 2;
+
+    ctx.textAlign = "left";
+    ctx.font = "600 46px -apple-system, sans-serif";
+    ctx.fillStyle = "rgba(241,241,246,0.4)";
+    ctx.fillText(beforeStr, startX, 500);
+
+    ctx.font = "400 40px -apple-system, sans-serif";
+    ctx.fillStyle = "rgba(241,241,246,0.4)";
+    ctx.fillText("→", startX + beforeWidth + 20, 496);
+
+    var afterGrad = ctx.createLinearGradient(0, 0, afterWidth, 0);
+    afterGrad.addColorStop(0, "#ffffff");
+    afterGrad.addColorStop(1, "#dcdcff");
+    ctx.font = "800 78px -apple-system, sans-serif";
+    ctx.fillStyle = afterGrad;
+    ctx.fillText(afterStr, startX + beforeWidth + arrowWidth, 510);
+
+    var d = computeDelta();
+    ctx.textAlign = "center";
+    ctx.font = "700 34px -apple-system, sans-serif";
+    var badgeColor = d.direction === "positive" ? "#34d399" : (d.direction === "negative" ? "#f87171" : "rgba(241,241,246,0.6)");
+    var badgeBg = d.direction === "positive" ? "rgba(52,211,153,0.15)" : (d.direction === "negative" ? "rgba(248,113,113,0.15)" : "rgba(255,255,255,0.08)");
+
+    var badgeWidth = ctx.measureText(d.percentLabel).width + 80;
+    var badgeHeight = 68;
+    var badgeX = size / 2 - badgeWidth / 2;
+    var badgeY = 580;
+    ctx.fillStyle = badgeBg;
+    drawRoundedRect(ctx, badgeX, badgeY, badgeWidth, badgeHeight, badgeHeight / 2);
+    ctx.fill();
+    ctx.fillStyle = badgeColor;
+    ctx.fillText(d.percentLabel, size / 2, badgeY + badgeHeight / 2 + 12);
+
+    var metaY = 720;
+    if (state.timeframe) {
+      ctx.font = "400 28px -apple-system, sans-serif";
+      ctx.fillStyle = "rgba(241,241,246,0.5)";
+      ctx.fillText(state.timeframe, size / 2, metaY);
+      metaY += 42;
+    }
+    if (state.source) {
+      ctx.font = "400 26px -apple-system, sans-serif";
+      ctx.fillStyle = "rgba(241,241,246,0.35)";
+      ctx.fillText(state.source, size / 2, metaY);
+    }
+
+    ctx.textAlign = "right";
+    ctx.font = "400 22px -apple-system, sans-serif";
+    ctx.fillStyle = "rgba(241,241,246,0.3)";
+    ctx.fillText("Made with ProofReel Snapshot", size - 40, size - 36);
+
+    canvas.toBlob(function (blob) {
+      if (!blob) {
+        alert("Export failed: the image could not be generated. Please try again.");
+        return;
+      }
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      var safeName = (state.metricName || "proof-card").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+      a.href = url;
+      a.download = "proofreel-snapshot-" + (safeName || "card") + ".png";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    }, "image/png");
+  }
+
+  el.exportBtn.addEventListener("click", exportPNG);
+
+  render();
+})();
+</script>
+
+</body>
+</html>
