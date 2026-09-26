@@ -414,17 +414,42 @@
     s = s.replace(/%/g, "");
     s = s.replace(/[$€£¥]/g, "");
     s = s.replace(/\s+/g, "");
-    if (s.indexOf(".") === -1 && /,/.test(s)) {
+
+    if (s.charAt(0) === "+") {
+      s = s.slice(1);
+    }
+
+    if (s.indexOf(".") !== -1 && s.indexOf(",") !== -1) {
+      var lastDot = s.lastIndexOf(".");
+      var lastComma = s.lastIndexOf(",");
+      if (lastComma > lastDot) {
+        s = s.replace(/\./g, "").replace(",", ".");
+      } else {
+        s = s.replace(/,/g, "");
+      }
+    } else if (s.indexOf(",") !== -1) {
       var parts = s.split(",");
       if (parts.length === 2 && parts[1].length >= 1 && parts[1].length <= 2 && /^\d+$/.test(parts[1])) {
         s = parts[0] + "." + parts[1];
       } else {
         s = s.replace(/,/g, "");
       }
-    } else {
-      s = s.replace(/,/g, "");
+    } else if (s.indexOf(".") !== -1) {
+      var dotParts = s.split(".");
+      if (dotParts.length > 2) {
+        s = s.replace(/\./g, "");
+      }
     }
+
     if (s.length === 0) return { ok: false };
+
+    if (/^-?\.\d+$/.test(s)) {
+      s = s.replace(".", "0.");
+    }
+    if (/^-?\d+\.$/.test(s)) {
+      s = s.slice(0, -1);
+    }
+
     if (!/^-?\d+(\.\d+)?$/.test(s)) return { ok: false };
     var n = parseFloat(s);
     if (!isFinite(n)) return { ok: false };
@@ -434,6 +459,9 @@
   function formatNumber(n, isPercent) {
     if (n === null || n === undefined || !isFinite(n)) return "—";
     var rounded = Math.round(n * 100) / 100;
+    if (Math.abs(rounded) < 0.0000001 || Object.is(rounded, -0)) {
+      rounded = 0;
+    }
     var isInt = Math.abs(rounded - Math.round(rounded)) < 0.005;
     var formatted = isInt
       ? Math.round(rounded).toLocaleString("en-US")
@@ -707,12 +735,13 @@
     ctx.fillStyle = "rgba(241,241,246,0.4)";
     ctx.fillText("→", startX + beforeWidth + 20, 496);
 
-    var afterGrad = ctx.createLinearGradient(0, 0, afterWidth, 0);
+    var afterX = startX + beforeWidth + arrowWidth;
+    var afterGrad = ctx.createLinearGradient(afterX, 0, afterX + afterWidth, 0);
     afterGrad.addColorStop(0, "#ffffff");
     afterGrad.addColorStop(1, "#dcdcff");
     ctx.font = "800 78px -apple-system, sans-serif";
     ctx.fillStyle = afterGrad;
-    ctx.fillText(afterStr, startX + beforeWidth + arrowWidth, 510);
+    ctx.fillText(afterStr, afterX, 510);
 
     var d = computeDelta();
     ctx.textAlign = "center";
